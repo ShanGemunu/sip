@@ -109,17 +109,17 @@ try {
     $alterquery_cdr_call_1 = "ALTER TABLE `cdr_call_test_01` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `network_id`";
     $alterquery_cdr_call_2 = "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` ADD INDEX `idx_roaming` (`roaming`)";
 
-    // $statement = $conn->prepare($alterquery_cdr_call_1);
-    // if (!($statement->execute())) {
-    //     throw new Exception('exception occured in alterquery_cdr_call_1');
-    // }
-    // $statement->close();
+    $statement = $conn->prepare($alterquery_cdr_call_1);
+    if (!($statement->execute())) {
+        throw new Exception('exception occured in alterquery_cdr_call_1');
+    }
+    $statement->close();
 
-    // $statement = $conn->prepare($alterquery_cdr_call_2);
-    // if (!($statement->execute())) {
-    //     throw new Exception('exception occured in alterquery_cdr_call_2');
-    // }
-    // $statement->close();
+    $statement = $conn->prepare($alterquery_cdr_call_2);
+    if (!($statement->execute())) {
+        throw new Exception('exception occured in alterquery_cdr_call_2');
+    }
+    $statement->close();
 
     $createTableSystemParameters = "
     CREATE TABLE `system_parameters` (
@@ -135,11 +135,11 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
     ";
 
-    // $statement = $conn->prepare($createTableSystemParameters);
-    // if (!($statement->execute())) {
-    //     throw new Exception('exception occured in createTableSystemParameters');
-    // }
-    // $statement->close();
+    $statement = $conn->prepare($createTableSystemParameters);
+    if (!($statement->execute())) {
+        throw new Exception('exception occured in createTableSystemParameters');
+    }
+    $statement->close();
 
     $alterTableSystemParamOne = "
         ALTER TABLE `system_parameters`
@@ -147,19 +147,19 @@ try {
         ADD KEY `param` (`param`)
     ";
 
-    // $statement = $conn->prepare($alterTableSystemParamOne);
-    // if (!($statement->execute())) {
-    //     throw new Exception('exception occured in alterTableSystemParamOne');
-    // }
-    // $statement->close();
+    $statement = $conn->prepare($alterTableSystemParamOne);
+    if (!($statement->execute())) {
+        throw new Exception('exception occured in alterTableSystemParamOne');
+    }
+    $statement->close();
 
-    // $alterTableSystemParamTwo = "ALTER TABLE `system_parameters` CHANGE `id` `id` INT(11) NOT NULL AUTO_INCREMENT";
+    $alterTableSystemParamTwo = "ALTER TABLE `system_parameters` CHANGE `id` `id` INT(11) NOT NULL AUTO_INCREMENT";
 
-    // $statement = $conn->prepare($alterTableSystemParamTwo);
-    // if (!($statement->execute())) {
-    //     throw new Exception('exception occured in alterTableSystemParamTwo');
-    // }
-    // $statement->close();
+    $statement = $conn->prepare($alterTableSystemParamTwo);
+    if (!($statement->execute())) {
+        throw new Exception('exception occured in alterTableSystemParamTwo');
+    }
+    $statement->close();
 
 
 
