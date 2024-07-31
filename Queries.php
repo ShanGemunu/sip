@@ -1,5 +1,12 @@
 <?php
 
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
 class Queries
 {
     function getMsrnRanges($conn)
@@ -230,11 +237,14 @@ class Queries
     {
         $offset = 0;
         $batchRecords = [];
+        $limit = $_ENV['LIMIT'];
+        $cdrTableName = "cdr_call_".date('Ymd');
 
         $msrnRanges = $this->getMsrnRanges($conn);
 
         do {
-            $query_ = "SELECT * FROM cdr_call_test_01 LIMIT 10000 OFFSET ?";
+            
+            $query_ = "SELECT * FROM ".$cdrTableName." LIMIT ".$limit." OFFSET ?";
 
             $statement_ = $conn->prepare($query_);
 
@@ -254,7 +264,7 @@ class Queries
             $statement_->close();
 
             if (0 < count($batchRecords)) {
-                $query__ = "UPDATE cdr_call_test_01 SET roaming=? WHERE id=?";
+                $query__ = "UPDATE ".$cdrTableName." SET roaming=? WHERE id=?";
                 $statement__ = $conn->prepare($query__);
                 if ($statement__ === false) {
                     throw new Exception("failed prepair");
@@ -271,7 +281,7 @@ class Queries
                 }
             }
 
-            $offset += 10000;
+            $offset += $limit;
         } while (0 < count($batchRecords));
     }
 }
