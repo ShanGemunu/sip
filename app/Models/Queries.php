@@ -76,6 +76,7 @@ class Queries
     public function alterTableReportHourlyCountryCarrierWiseTraffic(): void
     {
         $query = "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` ADD `roaming` TINYINT(1) NOT NULL AFTER `network_id`, ADD INDEX `idx_roaming` (`roaming`)";
+        
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in alterTableReportHourlyCountry__Carrier_Wise_Traffic');
@@ -150,8 +151,7 @@ class Queries
         `updated_by` int(11) DEFAULT NULL,
         PRIMARY KEY (`id`),
         KEY `param` (`param`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1
-        ";
+        )";
 
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
@@ -161,54 +161,35 @@ class Queries
 
     public function getCountForSystemParamByColumn(string $column, string $value): int
     {
-        $query = "SELECT * FROM system system_parameters WHERE " . $column . "=" . $value . "";
-
-        $statement = $this->conn->prepare($query);
-        if (!($statement->execute())) {
+        $query = "SELECT * FROM system_parameters WHERE {$column}='{$value}'";
+        
+        $statement = $this->conn->query($query);
+        if (!$statement) {
             throw new Exception('exception occured in alterTableSystemParamTwo');
         }
 
-        $result = $statement->get_result();
-        $result = $result->fetch_all(MYSQLI_ASSOC);
-
-        return count($result);
-
+        return $statement->num_rows;
     }
 
-    public function insertIntoSystemParamOne(): null
+    public function insertIntoSystemParamOne(): void
     {
+        $value = "";
         $count = $this->getCountForSystemParamByColumn('param', 'rotation_chart_list_on_traffic_trends');
+        $countRotationDelay = $this->getCountForSystemParamByColumn('param', 'rotation_delay_on_traffic_trends');
 
-        if (!($count === 0)) {
-            return null;
+        if (($count === 0)) {
+            $value = "('rotation_chart_list_on_traffic_trends', `carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab`, 'traffic_trends_dashboard')";
         }
 
-        $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES ('rotation_chart_list_on_traffic_trends', `carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab`, 'traffic_trends_dashboard')";
+        if ($countRotationDelay === 0) {
+            $value .= "('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay')";
+        }
+        $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES $value";
 
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured @insertIntoSystemParamOne');
         }
-
-        return null;
-    }
-
-    public function insertIntoSystemParamTwo(): null
-    {
-        $count = $this->getCountForSystemParamByColumn('param', 'rotation_delay_on_traffic_trends');
-
-        if (!($count === 0)) {
-            return null;
-        }
-
-        $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES ('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay')";
-
-        $statement = $this->conn->prepare($query);
-        if (!($statement->execute())) {
-            throw new Exception('exception occured @insertIntoSystemParamTwo');
-        }
-
-        return null;
     }
 
     public function insertIntoPermissions():void

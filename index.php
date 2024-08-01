@@ -14,7 +14,6 @@ try {
     $queries->alterTableCdrCall();
     $queries->createTableSystemParameters();
     $queries->insertIntoSystemParamOne();
-    $queries->insertIntoSystemParamTwo();
     $queries->insertIntoPermissions();
     $queries->addValuesForCdrCall();
 
