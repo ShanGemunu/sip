@@ -14,12 +14,12 @@ class Queries
 {
     private $conn;
 
-    function __construct(){
+    public function __construct(){
         $dbConnection = DbConnection::getDbConnectionInstance();
         $this->conn = $dbConnection->getDbConnection();
     }
 
-    private function getMsrnRanges()
+    private function getMsrnRanges():array
     {
         $query = "SELECT from_msisdn,to_msisdn FROM msrn_ranges";
         $statement = $this->conn->prepare($query);
@@ -33,17 +33,16 @@ class Queries
         return $msrnRanges;
     }
 
-    private function isMsrn($called, $msrnRanges)
+    private function isMsrn(string $called, array $msrnRanges):bool
     {
         foreach ($msrnRanges as $msrn) {
             if ($called >= $msrn['from_msisdn'] && $called <= $msrn['to_msisdn'])
                 return true;
         }
-
         return false;
     }
 
-    private function getRoamingType($traffic_type, $calling, $called, $msrnRanges)
+    private function getRoamingType(string $traffic_type, string $calling, string $called, array $msrnRanges):int
     {
         $roaming = 0;
 
@@ -73,7 +72,7 @@ class Queries
     }
 
     // report_hourly_country_network_carrier_wise_traffic
-    function alterTableReportHourlyCountryCarrierWiseTraffic(){
+    public function alterTableReportHourlyCountryCarrierWiseTraffic(){
         $query = "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` ADD `roaming` TINYINT(1) NOT NULL AFTER `network_id`, ADD INDEX `idx_roaming` (`roaming`)";
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
@@ -82,7 +81,7 @@ class Queries
     }
 
     // report_hourly_country_network_carrier_wise_traffic
-    function alterReportHourlyCountryNetworkCarrierWiseTraffic(){
+    public function alterReportHourlyCountryNetworkCarrierWiseTraffic(){
         $alterQueries = [
             "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` DROP INDEX `hour`, ADD UNIQUE `hour` (`hour`, `traffic_type`, `network_id`, `carrier_id`, `country_id`, `roaming`)",
             "ALTER TABLE `nw_cc_top_dest` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `traffic_type`",
@@ -110,7 +109,7 @@ class Queries
 
    
 
-    function insertIntoMsrn(){
+    public function insertIntoMsrn(){
         $query = "INSERT INTO msrn_ranges (from_msisdn, to_msisdn) VALUES (94783502000, 94783502999), (94783503000, 94783503999), (94783506000, 94783506999),  (94783507000, 94783507999), (94780057000, 94780057999), (94780058000, 94780058999), (94780059000, 94780059999), (94780060000, 94780060999)";
 
         $statement = $this->conn->prepare($query);
@@ -121,7 +120,7 @@ class Queries
     }
 
 
-    function alterTableCdrCall(){
+    public function alterTableCdrCall(){
         $cdrTableName = "cdr_call_".date('Ymd');
         $query = "ALTER TABLE ".$cdrTableName." ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `network_id`";
         $statement = $this->conn->prepare($query);
@@ -131,7 +130,7 @@ class Queries
     }
 
     
-    function createTableSystemParameters(){
+    public function createTableSystemParameters(){
         $query = "
         CREATE TABLE IF NOT EXISTS `system_parameters` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -154,7 +153,7 @@ class Queries
         }
     }
 
-    function getCountForSystemParamByColumn($column, $value)
+    public function getCountForSystemParamByColumn(string $column,string $value):int
     {
         $query = "SELECT * FROM system system_parameters WHERE " . $column . "=" . $value . "";
 
@@ -170,7 +169,7 @@ class Queries
 
     }
 
-    function insertIntoSystemParamOne()
+    public function insertIntoSystemParamOne()
     {
         $count = $this->getCountForSystemParamByColumn('param', 'rotation_chart_list_on_traffic_trends');
 
@@ -186,7 +185,7 @@ class Queries
         }
     }
 
-    function insertIntoSystemParamTwo()
+    public function insertIntoSystemParamTwo()
     {
         $count = $this->getCountForSystemParamByColumn('param', 'rotation_delay_on_traffic_trends');
 
@@ -202,7 +201,7 @@ class Queries
         }
     }
 
-    function insertIntoPermissions()
+    public function insertIntoPermissions()
     {
         $query = "
             INSERT INTO `permissions` (`name`, `guard_name`, `enabled`) 
@@ -219,7 +218,7 @@ class Queries
         }
     }
 
-    function addValuesForCdrCall()
+    public function addValuesForCdrCall(): void
     {
         $offset = 0;
         $batchRecords = [];

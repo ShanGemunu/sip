@@ -2,6 +2,8 @@
 
 namespace App\Database;
 
+echo "in the dbconnection";
+
 use Dotenv\Dotenv;
 use mysqli;
 

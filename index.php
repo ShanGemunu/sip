@@ -7,14 +7,12 @@ use App\Models\Queries;
 
 try {
     $queries = new Queries();
-
+   
     $queries->alterTableReportHourlyCountryCarrierWiseTraffic();
     $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic();
     $queries->insertIntoMsrn();
     $queries->alterTableCdrCall();
     $queries->createTableSystemParameters();
-    $queries->alterTableSystemParamOne();
-    $queries->alterTableSystemParmTwo();
     $queries->insertIntoSystemParamOne();
     $queries->insertIntoSystemParamTwo();
     $queries->insertIntoPermissions();
