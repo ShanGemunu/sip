@@ -13,8 +13,6 @@ try {
     $queries->insertIntoMsrn();
     $queries->alterTableCdrCall();
     $queries->createTableSystemParameters();
-    $queries->alterTableSystemParamOne();
-    $queries->alterTableSystemParmTwo();
     $queries->insertIntoSystemParamOne();
     $queries->insertIntoSystemParamTwo();
     $queries->insertIntoPermissions();
