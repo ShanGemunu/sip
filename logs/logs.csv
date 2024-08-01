@@ -1,8 +1,0 @@
-"2024-07-30 , 11:06:13",exception,"You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'DELIMITER $$;
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM system_parameters WHER...' at line 1",209,"C:\xampp\htdocs\sip\index.php"
-"2024-07-30 , 16:58:48",exception,"Can't DROP INDEX `hour`; check that it exists",87,"C:\xampp\htdocs\sip\Queries.php"
-"2024-07-30 , 21:50:57",exception,"Duplicate column name 'roaming'",62,"C:\xampp\htdocs\sip\Queries.php"
-"2024-07-30 , 22:00:56",exception,"Duplicate column name 'roaming'",87,"C:\xampp\htdocs\sip\Queries.php"
-"2024-07-31 , 09:49:07",exception,"Table 'sip.system' doesn't exist",168,"C:\xampp\htdocs\sip\Queries.php"
-"2024-07-31 , 15:45:39",exception,"Duplicate column name 'roaming'",94,"C:\xampp\htdocs\sip\Queries.php"

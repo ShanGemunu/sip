@@ -1,0 +1,5 @@
+vendor/
+sip/
+app/Log/logs/logs.csv
+.env
+composer.lock
