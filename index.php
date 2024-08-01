@@ -8,15 +8,15 @@ use App\Models\Queries;
 try {
     $queries = new Queries();
    
-    // $queries->alterTableReportHourlyCountryCarrierWiseTraffic();
-    // $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic();
-    // $queries->insertIntoMsrn();
-    // $queries->alterTableCdrCall();
-    // $queries->createTableSystemParameters();
-    // $queries->insertIntoSystemParamOne();
-    // $queries->insertIntoSystemParamTwo();
-    // $queries->insertIntoPermissions();
-    // $queries->addValuesForCdrCall();
+    $queries->alterTableReportHourlyCountryCarrierWiseTraffic();
+    $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic();
+    $queries->insertIntoMsrn();
+    $queries->alterTableCdrCall();
+    $queries->createTableSystemParameters();
+    $queries->insertIntoSystemParamOne();
+    $queries->insertIntoSystemParamTwo();
+    $queries->insertIntoPermissions();
+    $queries->addValuesForCdrCall();
 
 } catch (Exception $e) {
     $logger = new Logger();
