@@ -31,7 +31,7 @@ class DbConnection
   }
 
   // -> object
-  public static function getDbConnectionInstance(){
+  public static function getDbConnectionInstance():DbConnection{
     if (self::$dbConnection === null) {
       self::$dbConnection = new DbConnection();
     }
@@ -39,7 +39,7 @@ class DbConnection
     return self::$dbConnection;
   }
 
-  public function getDbConnection(){
+  public function getDbConnection():mysqli{
     return $this->conn;
   }
 }

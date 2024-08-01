@@ -4,7 +4,7 @@ namespace App\Log;
 
 class Logger
 {
-    function createLog($message, $line, $file)
+    function createLog(string $message, int $line, string $file):void
     {
         $filePath = __DIR__ . '/logs/logs.csv';
         $fileHandle = fopen($filePath, 'a');

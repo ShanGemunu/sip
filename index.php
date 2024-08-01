@@ -7,7 +7,7 @@ use App\Models\Queries;
 
 try {
     $queries = new Queries();
-
+   
     $queries->alterTableReportHourlyCountryCarrierWiseTraffic();
     $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic();
     $queries->insertIntoMsrn();
