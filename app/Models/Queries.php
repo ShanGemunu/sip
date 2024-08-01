@@ -1,18 +1,28 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+namespace App\Models;
 
 use Dotenv\Dotenv;
+// use Exception;
+use App\Database\DbConnection;
+use Exception; 
 
-$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv::createImmutable(__DIR__.'/../../');
 $dotenv->load();
 
 class Queries
 {
-    function getMsrnRanges($conn)
+    private $conn;
+
+    function __construct(){
+        $dbConnection = DbConnection::getDbConnectionInstance();
+        $this->conn = $dbConnection->getDbConnection();
+    }
+
+    private function getMsrnRanges()
     {
         $query = "SELECT from_msisdn,to_msisdn FROM msrn_ranges";
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in getMsrnRanges');
         }
@@ -23,7 +33,7 @@ class Queries
         return $msrnRanges;
     }
 
-    function isMsrn($called, $msrnRanges)
+    private function isMsrn($called, $msrnRanges)
     {
         foreach ($msrnRanges as $msrn) {
             if ($called >= $msrn['from_msisdn'] && $called <= $msrn['to_msisdn'])
@@ -33,7 +43,7 @@ class Queries
         return false;
     }
 
-    function getRoamingType($traffic_type, $calling, $called, $msrnRanges)
+    private function getRoamingType($traffic_type, $calling, $called, $msrnRanges)
     {
         $roaming = 0;
 
@@ -63,16 +73,16 @@ class Queries
     }
 
     // report_hourly_country_network_carrier_wise_traffic
-    function alterTableReportHourlyCountryCarrierWiseTraffic($conn){
+    function alterTableReportHourlyCountryCarrierWiseTraffic(){
         $query = "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` ADD `roaming` TINYINT(1) NOT NULL AFTER `network_id`, ADD INDEX `idx_roaming` (`roaming`)";
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in alterTableReportHourlyCountry__Carrier_Wise_Traffic');
         }
     }
 
     // report_hourly_country_network_carrier_wise_traffic
-    function alterReportHourlyCountryNetworkCarrierWiseTraffic($conn){
+    function alterReportHourlyCountryNetworkCarrierWiseTraffic(){
         $alterQueries = [
             "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` DROP INDEX `hour`, ADD UNIQUE `hour` (`hour`, `traffic_type`, `network_id`, `carrier_id`, `country_id`, `roaming`)",
             "ALTER TABLE `nw_cc_top_dest` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `traffic_type`",
@@ -90,7 +100,7 @@ class Queries
         ];
 
         foreach ($alterQueries as $query) {
-            $statement = $conn->prepare($query);
+            $statement = $this->conn->prepare($query);
             if (!($statement->execute())) {
                 throw new Exception('exception occured in alterQueries');
             }
@@ -100,10 +110,10 @@ class Queries
 
    
 
-    function insertIntoMsrn($conn){
+    function insertIntoMsrn(){
         $query = "INSERT INTO msrn_ranges (from_msisdn, to_msisdn) VALUES (94783502000, 94783502999), (94783503000, 94783503999), (94783506000, 94783506999),  (94783507000, 94783507999), (94780057000, 94780057999), (94780058000, 94780058999), (94780059000, 94780059999), (94780060000, 94780060999)";
 
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in insertIntoMsrn');
         }
@@ -111,19 +121,20 @@ class Queries
     }
 
 
-    function alterTableCdrCall($conn){
-        $query = "ALTER TABLE `cdr_call_test_01` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `network_id`";
-        $statement = $conn->prepare($query);
+    function alterTableCdrCall(){
+        $cdrTableName = "cdr_call_".date('Ymd');
+        $query = "ALTER TABLE ".$cdrTableName." ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `network_id`";
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in alterTableCdrCall');
         }
     }
 
     
-    function createTableSystemParameters($conn){
+    function createTableSystemParameters(){
         $query = "
-        CREATE TABLE `system_parameters` (
-        `id` int(11) NOT NULL,
+        CREATE TABLE IF NOT EXISTS `system_parameters` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
         `param` varchar(200) NOT NULL,
         `value` text NOT NULL,
         `description` varchar(256) DEFAULT NULL,
@@ -131,48 +142,23 @@ class Queries
         `updated_at` datetime DEFAULT NULL,
         `deleted_at` datetime DEFAULT NULL,
         `created_by` int(11) DEFAULT NULL,
-        `updated_by` int(11) DEFAULT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+        `updated_by` int(11) DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        KEY `param` (`param`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1
         ";
 
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in createTableSystemParameters');
         }
     }
 
-    
-
-    function alterTableSystemParamOne($conn){
-        $query = "
-        ALTER TABLE `system_parameters`
-        ADD PRIMARY KEY (`id`),
-        ADD KEY `param` (`param`)
-        ";
-
-        $statement = $conn->prepare($query);
-        if (!($statement->execute())) {
-            throw new Exception('exception occured in alterTableSystemParamOne');
-        }
-    }
-    
-
-    function alterTableSystemParmTwo($conn){
-        $query = "ALTER TABLE `system_parameters` CHANGE `id` `id` INT(11) NOT NULL AUTO_INCREMENT";
-
-        $statement = $conn->prepare($query);
-        if (!($statement->execute())) {
-            throw new Exception('exception occured in alterTableSystemParmTwo');
-        }
-    }
-
-    
-
-    function getCountForSystemParamByColumn($column, $value, $conn)
+    function getCountForSystemParamByColumn($column, $value)
     {
         $query = "SELECT * FROM system system_parameters WHERE " . $column . "=" . $value . "";
 
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in alterTableSystemParamTwo');
         }
@@ -184,9 +170,9 @@ class Queries
 
     }
 
-    function insertIntoSystemParamOne($conn)
+    function insertIntoSystemParamOne()
     {
-        $count = $this->getCountForSystemParamByColumn('param', 'rotation_chart_list_on_traffic_trends', $conn);
+        $count = $this->getCountForSystemParamByColumn('param', 'rotation_chart_list_on_traffic_trends');
 
         if (!($count === 0)) {
             return null;
@@ -194,15 +180,15 @@ class Queries
 
         $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES ('rotation_chart_list_on_traffic_trends', `carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab`, 'traffic_trends_dashboard')";
 
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured @insertIntoSystemParamOne');
         }
     }
 
-    function insertIntoSystemParamTwo($conn)
+    function insertIntoSystemParamTwo()
     {
-        $count = $count = $this->getCountForSystemParamByColumn('param', 'rotation_delay_on_traffic_trends', $conn);
+        $count = $this->getCountForSystemParamByColumn('param', 'rotation_delay_on_traffic_trends');
 
         if (!($count === 0)) {
             return null;
@@ -210,13 +196,13 @@ class Queries
 
         $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES ('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay')";
 
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured @insertIntoSystemParamTwo');
         }
     }
 
-    function insertIntoPermissions($conn)
+    function insertIntoPermissions()
     {
         $query = "
             INSERT INTO `permissions` (`name`, `guard_name`, `enabled`) 
@@ -227,26 +213,26 @@ class Queries
             ('system-parameter delete', 'web', '1')
         ";
 
-        $statement = $conn->prepare($query);
+        $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in insertIntoPermissions');
         }
     }
 
-    function addValuesForCdrCall($conn)
+    function addValuesForCdrCall()
     {
         $offset = 0;
         $batchRecords = [];
         $limit = $_ENV['LIMIT'];
         $cdrTableName = "cdr_call_".date('Ymd');
 
-        $msrnRanges = $this->getMsrnRanges($conn);
+        $msrnRanges = $this->getMsrnRanges();
 
         do {
             
             $query_ = "SELECT * FROM ".$cdrTableName." LIMIT ".$limit." OFFSET ?";
 
-            $statement_ = $conn->prepare($query_);
+            $statement_ = $this->conn->prepare($query_);
 
             if ($statement_ === false) {
                 throw new Exception('exception occored.');
@@ -265,7 +251,7 @@ class Queries
 
             if (0 < count($batchRecords)) {
                 $query__ = "UPDATE ".$cdrTableName." SET roaming=? WHERE id=?";
-                $statement__ = $conn->prepare($query__);
+                $statement__ = $this->conn->prepare($query__);
                 if ($statement__ === false) {
                     throw new Exception("failed prepair");
                 }

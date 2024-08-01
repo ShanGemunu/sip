@@ -1,45 +1,27 @@
 <?php
-require_once __DIR__ . '/Connecter.php';
-require_once __DIR__ . '/Queries.php';
 
-$connecter = Connecter::getConneterInstance();
-$conn = $connecter->getDbConnection();
+require_once __DIR__ . '/vendor/autoload.php';
 
+use App\Log\Logger;
+use App\Models\Queries;
 
 try {
-
     $queries = new Queries();
-    
-    $queries->alterTableReportHourlyCountryCarrierWiseTraffic($conn);
-    $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic($conn);
-    $queries->insertIntoMsrn($conn);
-    $queries->alterTableCdrCall($conn);
-    $queries->createTableSystemParameters($conn);
-    $queries->alterTableSystemParamOne($conn);
-    $queries->alterTableSystemParmTwo($conn);
-    $queries->insertIntoSystemParamOne($conn);
-    $queries->insertIntoSystemParamTwo($conn);
-    $queries->insertIntoPermissions($connn);
-    $queries->addValuesForCdrCall($conn);
 
+    $queries->alterTableReportHourlyCountryCarrierWiseTraffic();
+    $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic();
+    $queries->insertIntoMsrn();
+    $queries->alterTableCdrCall();
+    $queries->createTableSystemParameters();
+    $queries->alterTableSystemParamOne();
+    $queries->alterTableSystemParmTwo();
+    $queries->insertIntoSystemParamOne();
+    $queries->insertIntoSystemParamTwo();
+    $queries->insertIntoPermissions();
+    $queries->addValuesForCdrCall();
 
 } catch (Exception $e) {
-    $filePath = __DIR__ . '/logs.csv';
-    $fileHandle = fopen($filePath, 'a');
-
-    if ($fileHandle) {
-        date_default_timezone_set('Asia/Colombo');
-        $log = [date('Y-m-d , H:i:s'), "exception", $e->getMessage(), $e->getLine(), $e->getFile()];
-
-        // Write the data to the CSV file
-        fputcsv($fileHandle, $log);
-
-        // Close the file
-        fclose($fileHandle);
-    } else {
-        echo "Failed to open file!";
-    }
+    $logger = new Logger();
+    $logger->createLog($e->getMessage(), $e->getLine(), $e->getFile());
 }
-
-
 

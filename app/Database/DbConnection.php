@@ -1,13 +1,14 @@
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
+namespace App\Database;
 
 use Dotenv\Dotenv;
+use mysqli;
 
-$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv::createImmutable(__DIR__.'/../../');
 $dotenv->load();
 
-class Connecter
+class DbConnection
 {
   private $server;
   private $username;
@@ -15,7 +16,7 @@ class Connecter
   private $db;
   private $port;
 
-  private static $connecter = null;
+  private static $dbConnection = null;
   private $conn;
 
   private function __construct()
@@ -30,12 +31,12 @@ class Connecter
   }
 
   // -> object
-  public static function getConneterInstance(){
-    if (self::$connecter === null) {
-      self::$connecter = new Connecter();
+  public static function getDbConnectionInstance(){
+    if (self::$dbConnection === null) {
+      self::$dbConnection = new DbConnection();
     }
 
-    return self::$connecter;
+    return self::$dbConnection;
   }
 
   public function getDbConnection(){

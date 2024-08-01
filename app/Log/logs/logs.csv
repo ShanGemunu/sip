@@ -1,0 +1,8 @@
+"2024-07-31 22:18:56",exception,"Unable to read any of the environment file(s) at [C:\xampp\htdocs\sip\app\Models\.env].",68,"C:\xampp\htdocs\sip\vendor\vlucas\phpdotenv\src\Store\FileStore.php"
+"2024-07-31 22:20:12",exception,"Unable to read any of the environment file(s) at [C:\xampp\htdocs\sip\app\Models\.env].",68,"C:\xampp\htdocs\sip\vendor\vlucas\phpdotenv\src\Store\FileStore.php"
+"2024-07-31 22:28:05",exception,"Unable to read any of the environment file(s) at [C:\xampp\htdocs\sip\app\Models\.env].",68,"C:\xampp\htdocs\sip\vendor\vlucas\phpdotenv\src\Store\FileStore.php"
+"2024-07-31 22:38:17",exception,,25,"C:\xampp\htdocs\sip\index.php"
+"2024-07-31 22:39:52",exception,"custom exception by me",24,"C:\xampp\htdocs\sip\index.php"
+"2024-07-31 22:53:41",exception,"custom error by shan",20,"C:\xampp\htdocs\sip\app\Models\Queries.php"
+"2024-07-31 22:55:56",exception,"custom error again...",25,"C:\xampp\htdocs\sip\index.php"
+"2024-07-31 22:56:00",exception,"custom error again...",25,"C:\xampp\htdocs\sip\index.php"
