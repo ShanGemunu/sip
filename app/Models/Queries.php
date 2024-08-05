@@ -6,6 +6,7 @@ use Dotenv\Dotenv;
 // use Exception;
 use App\Database\DbConnection;
 use Exception;
+use App\Log\Logger;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
@@ -13,11 +14,13 @@ $dotenv->load();
 class Queries
 {
     private $conn;
+    private $logger;
 
     public function __construct()
     {
         $dbConnection = DbConnection::getDbConnectionInstance();
         $this->conn = $dbConnection->getDbConnection();
+        $this->logger = new Logger();
     }
 
     private function getMsrnRanges(): array
@@ -31,6 +34,7 @@ class Queries
         $result = $statement->get_result();
         $msrnRanges = $result->fetch_all(MYSQLI_ASSOC);
 
+        $this->logger->createSuccessLog($query, 'getMsrnRanges', 'Queries');
         return $msrnRanges;
     }
 
@@ -76,10 +80,13 @@ class Queries
     public function alterTableReportHourlyCountryCarrierWiseTraffic(): void
     {
         $query = "ALTER TABLE `report_hourly_country_network_carrier_wise_traffic` ADD `roaming` TINYINT(1) NOT NULL AFTER `network_id`, ADD INDEX `idx_roaming` (`roaming`)";
+
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in alterTableReportHourlyCountry__Carrier_Wise_Traffic');
         }
+
+        $this->logger->createSuccessLog($query, 'alterTableReportHourlyCountryCarrierWiseTraffic', 'Queries');
     }
 
     // report_hourly_country_network_carrier_wise_traffic
@@ -93,6 +100,7 @@ class Queries
             "ALTER TABLE `cr_acd_mou` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `traffic_type`",
             "ALTER TABLE `cr_cc_asr_mou` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `traffic_type`",
             "ALTER TABLE `total_mou_on_wk_day` ADD `roaming` TINYINT NULL DEFAULT '0' AFTER `traffic_type`",
+
             "ALTER TABLE `ct_mou_top_dest` DROP INDEX `ct_mou_top_dest_date_country_id_traffic_type_unique`, ADD UNIQUE `ct_mou_top_dest_date_country_id_traffic_type_roaming_unique` (`date`, `country_id`, `traffic_type`, `roaming`)",
             "ALTER TABLE `ct_mou_variance` DROP INDEX `ct_mou_variance_date_country_id_traffic_type_unique`, ADD UNIQUE `ct_mou_variance_date_country_id_traffic_type_roaming_unique` (`date`,`country_id`,`traffic_type`,`roaming`)",
             "ALTER TABLE `nw_cc_top_dest` DROP INDEX `date_country_id_network_id_plmn_id_traffic_type_unique`, ADD UNIQUE `date_country_id_network_id_plmn_id_traffic_type_roaming_unique` (`date`,`country_id`,`network_id`,`plmn_id`,`traffic_type`,`roaming`)",
@@ -102,14 +110,36 @@ class Queries
         ];
 
         foreach ($alterQueries as $query) {
+
             $statement = $this->conn->prepare($query);
             if (!($statement->execute())) {
                 throw new Exception('exception occured in alterQueries');
             }
 
+            $this->logger->createSuccessLog($query, 'alterReportHourlyCountryNetworkCarrierWiseTraffic', 'Queries');
+
         }
     }
 
+
+    function createMsrnRangesTable()
+    {
+        $query = "
+        CREATE TABLE msrn_ranges (
+        id INT NOT NULL AUTO_INCREMENT,
+        from_msisdn BIGINT(20) NOT NULL,
+        to_msisdn BIGINT(20) NOT NULL,
+        INDEX(from_msisdn, to_msisdn),
+        PRIMARY KEY(id)
+        )";
+
+        $statement = $this->conn->prepare($query);
+        if (!($statement->execute())) {
+            throw new Exception('exception occured in createMsrnRangesTable');
+        }
+
+        $this->logger->createSuccessLog($query, 'createMsrnRangesTable', 'Queries');
+    }
 
 
     public function insertIntoMsrn(): void
@@ -120,6 +150,9 @@ class Queries
         if (!($statement->execute())) {
             throw new Exception('exception occured in insertIntoMsrn');
         }
+
+        $this->logger->createSuccessLog($query, 'insertIntoMsrn', 'Queries');
+
         $statement->close();
     }
 
@@ -132,6 +165,8 @@ class Queries
         if (!($statement->execute())) {
             throw new Exception('exception occured in alterTableCdrCall');
         }
+
+        $this->logger->createSuccessLog($query, 'alterTableCdrCall', 'Queries');
     }
 
 
@@ -150,68 +185,59 @@ class Queries
         `updated_by` int(11) DEFAULT NULL,
         PRIMARY KEY (`id`),
         KEY `param` (`param`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1
-        ";
+        )";
 
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
             throw new Exception('exception occured in createTableSystemParameters');
         }
+
+        $this->logger->createSuccessLog($query, 'createTableSystemParameters', 'Queries');
     }
 
-    public function getCountForSystemParamByColumn(string $column, string $value): int
+    public function getCountForSystemParamByColumn(string $valueParam, string $valueValue, string $valueDescription): int
     {
-        $query = "SELECT * FROM system system_parameters WHERE " . $column . "=" . $value . "";
+        $query = "SELECT * FROM system_parameters WHERE `param`='{$valueParam}' AND `value` = '{$valueValue}' AND `description`='{$valueDescription}'";
 
-        $statement = $this->conn->prepare($query);
-        if (!($statement->execute())) {
+        $statement = $this->conn->query($query);
+        if (!$statement) {
             throw new Exception('exception occured in alterTableSystemParamTwo');
         }
 
-        $result = $statement->get_result();
-        $result = $result->fetch_all(MYSQLI_ASSOC);
+        $numberOfRows =  $statement->num_rows;
 
-        return count($result);
+        $this->logger->createSuccessLog($query, 'getCountForSystemParamByColumn', 'Queries');
 
+        return $numberOfRows;
     }
 
-    public function insertIntoSystemParamOne(): null
+    public function insertIntoSystemParam(): void
     {
-        $count = $this->getCountForSystemParamByColumn('param', 'rotation_chart_list_on_traffic_trends');
+        $value = "";
+        $countTerendsDashboard = $this->getCountForSystemParamByColumn('rotation_chart_list_on_traffic_trends', 'carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab', 'traffic_trends_dashboard');
+        $countRotationDelay = $this->getCountForSystemParamByColumn('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay');
 
-        if (!($count === 0)) {
-            return null;
+        if (($countTerendsDashboard !== 0 && $countRotationDelay === 0)) {
+            $value = "('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay')";
+        } elseif ($countRotationDelay !== 0 && $countTerendsDashboard === 0) {
+            $value = "('rotation_chart_list_on_traffic_trends', 'carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab', 'traffic_trends_dashboard')";
+        } elseif ($countRotationDelay === 0 && $countTerendsDashboard === 0) {
+            $value = "('rotation_chart_list_on_traffic_trends', 'carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab', 'traffic_trends_dashboard'),
+            ('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay')";
+        } else {
+            return;
         }
-
-        $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES ('rotation_chart_list_on_traffic_trends', `carrier_wise_total_attempts_last_3_days-tab,last_hour_traffic-tab,number_of_attempts-tab,carrier_wise_average_call_duration_last_3_days-tab,carrier_wise_answer_seizure_ratio_last_3_days-tab,carrier_wise_mou_last_3_days-tab`, 'traffic_trends_dashboard')";
+        $query = "INSERT INTO system_parameters (`param`, `value`, `description`) VALUES $value";
 
         $statement = $this->conn->prepare($query);
         if (!($statement->execute())) {
-            throw new Exception('exception occured @insertIntoSystemParamOne');
+            throw new Exception('exception occured @insertIntoSystemParam');
         }
 
-        return null;
+        $this->logger->createSuccessLog($query, 'insertIntoSystemParam', 'Queries');
     }
 
-    public function insertIntoSystemParamTwo(): null
-    {
-        $count = $this->getCountForSystemParamByColumn('param', 'rotation_delay_on_traffic_trends');
-
-        if (!($count === 0)) {
-            return null;
-        }
-
-        $query = "INSERT INTO `system_parameters` (`param`, `value`, `description`) VALUES ('rotation_delay_on_traffic_trends', '10000', 'traffic_trends_charts_rotation_delay')";
-
-        $statement = $this->conn->prepare($query);
-        if (!($statement->execute())) {
-            throw new Exception('exception occured @insertIntoSystemParamTwo');
-        }
-
-        return null;
-    }
-
-    public function insertIntoPermissions():void
+    public function insertIntoPermissions(): void
     {
         $query = "
             INSERT INTO `permissions` (`name`, `guard_name`, `enabled`) 
@@ -226,6 +252,8 @@ class Queries
         if (!($statement->execute())) {
             throw new Exception('exception occured in insertIntoPermissions');
         }
+
+        $this->logger->createSuccessLog($query, 'insertIntoPermissions', 'Queries');
     }
 
     public function addValuesForCdrCall(): void
@@ -256,6 +284,11 @@ class Queries
             $result = $statement_->get_result();
             $batchRecords = $result->fetch_all(MYSQLI_ASSOC);
 
+
+            $logQuery_ = "SELECT * FROM " . $cdrTableName . " LIMIT " . $limit . " OFFSET {$offset}";
+            $this->logger->createSuccessLog($logQuery_, 'addValuesForCdrCall', 'Queries');
+
+
             $statement_->close();
 
             if (0 < count($batchRecords)) {
@@ -273,6 +306,9 @@ class Queries
                     if ($statement__->execute() === false) {
                         throw new Exception('exception occored.');
                     }
+
+                    $logQuery__ ="UPDATE " . $cdrTableName . " SET roaming={$roaming} WHERE id={$record['id']}";
+                    $this->logger->createSuccessLog($logQuery__, 'addValuesForCdrCall', 'Queries');
                 }
             }
 
