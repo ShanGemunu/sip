@@ -10,15 +10,16 @@ try {
    
     $queries->alterTableReportHourlyCountryCarrierWiseTraffic();
     $queries->alterReportHourlyCountryNetworkCarrierWiseTraffic();
+    $queries->createMsrnRangesTable();
     $queries->insertIntoMsrn();
     $queries->alterTableCdrCall();
     $queries->createTableSystemParameters();
-    $queries->insertIntoSystemParamOne();
+    $queries->insertIntoSystemParam();
     $queries->insertIntoPermissions();
     $queries->addValuesForCdrCall();
 
 } catch (Exception $e) {
     $logger = new Logger();
-    $logger->createLog($e->getMessage(), $e->getLine(), $e->getFile());
+    $logger->createExceptionLog($e->getMessage(), $e->getLine(), $e->getFile());
 }
 
