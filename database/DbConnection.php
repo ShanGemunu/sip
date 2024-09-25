@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Database;
+namespace app\database;
 
 use Dotenv\Dotenv;
 use mysqli;
 
-$dotenv = Dotenv::createImmutable(__DIR__.'/../../');
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
 class DbConnection
@@ -31,7 +31,8 @@ class DbConnection
   }
 
   // -> object
-  public static function getDbConnectionInstance(){
+  public static function getDbConnectionInstance(): DbConnection
+  {
     if (self::$dbConnection === null) {
       self::$dbConnection = new DbConnection();
     }
@@ -39,7 +40,8 @@ class DbConnection
     return self::$dbConnection;
   }
 
-  public function getDbConnection(){
+  public function getDbConnection()
+  {
     return $this->conn;
   }
 }
