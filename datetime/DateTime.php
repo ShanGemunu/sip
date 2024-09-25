@@ -16,7 +16,6 @@ class DateTime
      */
     public static function getCurrentDateTime(string $format) : string
     {
-        $log_data = date($format);
 
         return date($format);
     }
