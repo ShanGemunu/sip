@@ -1,5 +1,5 @@
 vendor/
 sip/
-app/Log/logs/logs.csv
+app/logs/logs/app.log
 .env
 composer.lock
