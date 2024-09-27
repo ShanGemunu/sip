@@ -1,14 +1,62 @@
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 use app\datetime\DateTime;
 use app\log\Log;
+use app\logic\Logic;
+use app\models\Queries;
+use app\exceptions\PrepareQueryFailedException;
+use app\exceptions\QueryExecuteFailedException;
 
 new DateTime('Asia/Colombo');
 Log::config();
+$queries = new Queries();
+$currentDate = DateTime::getCurrentDateTime("Y-m-d");
 
-try{
+$tables_ = [
+    'activity_log_test_gemunu' => ["created_at", "updated_at"],
+    'carriers_test_gemunu' => ["deleted_at"],
+    'carrier_wise_traffic1_test_gemunu' => ["date"],
+    'cdr_call_test_gemunu' => ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"]
+];
 
+try {
+    foreach ($tables_ as $tableName => $columns) {
+        $columnsWithData = [];
+        foreach ($columns as $column) {
+            $recentDateArray = $queries->getRecentDate($tableName, $column);
+            $recentDate = $recentDateArray[0]['latest_order_date'];
+            if (!$recentDate) {
+                Log::logInfo("no controller", "no function", "column has no values", "success", "table - $tableName; column - $column");
+                continue;
+            }
+            $dateDiffData = Logic::findDateDifferenceData($currentDate, $recentDate);
+            if ($dateDiffData['diff'] === 0) {
+                Log::logInfo("no controller", "no function", "no difference between recent date from column and provided date", "success", "table - $tableName; column - $column");
+                continue;
+            }
+            if ($dateDiffData['direction'] === 1) {
+                $columnsWithData[$column] = ['modifier' => "add", 'dateDiff' => $dateDiffData['diff']];
+            } else {
+                $columnsWithData[$column] = ['modifier' => "sub", 'dateDiff' => $dateDiffData['diff']];
+            }
+            Log::logInfo("no controller", "no function", "there is difference between recent date from column and provided date", "success", "table - $tableName; column - $column; diff - {$dateDiffData['diff']}; direction - {$dateDiffData['direction']}");
 
-}catch(Exception $exception){
+        }
+        if (count($columnsWithData) === 0) {
+            continue;
+        }
+
+        $queries->updateDates($tableName, $columnsWithData);
+    }
+
+} 
+catch (PrepareQueryFailedException $exception) {
+    Log::logError("no controller", "no function", "Exception raised...", "failed", $exception->getMessage());
+}
+catch (QueryExecuteFailedException $exception) {
+    Log::logError("no controller", "no function", "Exception raised...", "failed", $exception->getMessage());
+}
+catch (Exception $exception) {
     Log::logError("no controller", "no function", "Exception raised...", "failed", $exception->getMessage());
 }
 
@@ -26,7 +74,6 @@ $tables = [
     'alarms_country_history' => ["date_time"],
     'alarms_network_history' => ["date_time"],
     'carrier_wise_traffic1' => ["date"],
-    'cdr_call' => ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],
     'cdr_call_20210823' => ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],
     'cdr_call_20210824' => ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],
     'cdr_call_20210825' => ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],

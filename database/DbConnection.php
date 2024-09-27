@@ -5,7 +5,7 @@ namespace app\database;
 use Dotenv\Dotenv;
 use mysqli;
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 class DbConnection
