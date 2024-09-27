@@ -2,11 +2,7 @@
 
 namespace app\database;
 
-use Dotenv\Dotenv;
 use mysqli;
-
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
-$dotenv->load();
 
 class DbConnection
 {
@@ -19,22 +15,22 @@ class DbConnection
   private static $dbConnection = null;
   private $conn;
 
-  private function __construct()
+  private function __construct($config)
   {
-    $this->server = $_ENV['SERVER'];
-    $this->username = $_ENV['USER_NAME'];
-    $this->password = $_ENV['PASSWORD'];
-    $this->db = $_ENV['DB_NAME'];
-    $this->port = $_ENV['PORT'];
+    $this->server = $config['SERVER'];
+    $this->username = $config['USER_NAME'];
+    $this->password = $config['PASSWORD'];
+    $this->db = $config['DB_NAME'];
+    $this->port = $config['PORT'];
 
     $this->conn = new mysqli($this->server, $this->username, $this->password, $this->db, $this->port);
   }
 
   // -> object
-  public static function getDbConnectionInstance(): DbConnection
+  public static function getDbConnectionInstance($config = []): DbConnection
   {
     if (self::$dbConnection === null) {
-      self::$dbConnection = new DbConnection();
+      self::$dbConnection = new DbConnection($config);
     }
 
     return self::$dbConnection;

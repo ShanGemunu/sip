@@ -16,4 +16,8 @@ class Logic
         
         return ['diff'=>$interval->days, 'direction'=>$interval->invert];
     }
+
+    public static function getLatestCreatedTable(){
+        
+    }
 }

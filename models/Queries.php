@@ -85,6 +85,41 @@ class Queries
 
         return $statement->affected_rows;
     }
+
+    public function getLatestTableName(string $dbName, string $tablePrefix, string $tableRemovePart,array $numericPart) : array|bool
+    {
+        $numericPartStart = $numericPart['start'];
+        $numericPartLength = $numericPart['length'];
+        $query = "
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = '$dbName'
+            AND table_name LIKE '{$tablePrefix}%' 
+            AND table_name NOT LIKE '%{$tableRemovePart}' 
+            ORDER BY CAST(SUBSTRING(table_name, $numericPartStart, $numericPartLength) AS UNSIGNED) DESC
+            LIMIT 7;
+        ";
+
+        $statement = $this->prepareQuery($query);
+
+        if ($statement === false)
+            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "getLatestTableName");
+
+        if ($statement->execute() === false) {
+            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "getLatestTableName");
+        }
+        $result = $statement->get_result();
+        Log::logInfo("Queries", "getLatestTableName", "get latest created table name", "success", "db name - $dbName; table prefix - $tablePrefix; table remove part - $tableRemovePart; numeric part - [start:$numericPartStart, length:$numericPartLength]");
+
+        $resultArray = $result->fetch_all(MYSQLI_ASSOC);
+
+        if(count($resultArray) === 0){
+
+            return false;
+        }
+
+        return $resultArray;
+    }
 }
 
 
