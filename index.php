@@ -140,9 +140,7 @@ try {
             }
             if ($dateDiffData['direction'] === 1) {
                 $columnsWithData[$column] = ['modifier' => "add", 'dateDiff' => $dateDiffData['diff']];
-            } else {
-                $columnsWithData[$column] = ['modifier' => "sub", 'dateDiff' => $dateDiffData['diff']];
-            }
+            } 
             Log::logInfo("no controller, but in index file", "no function", "there is difference between recent date from column and provided date", "success", "table - $tableName; column - $column; diff - {$dateDiffData['diff']}; direction - {$dateDiffData['direction']}");
 
         }
