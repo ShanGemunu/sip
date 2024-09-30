@@ -2,7 +2,7 @@
 
 namespace app\datetime;
 
-class DateTime
+class DateTimeClass
 {
     function __construct($timeZone)
     {

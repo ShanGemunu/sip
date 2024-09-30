@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
 use Dotenv\Dotenv;
-use app\datetime\DateTime;
+use app\datetime\DateTimeClass;
 use app\log\Log;
 use app\logic\Logic;
 use app\database\DbConnection;
@@ -12,7 +12,7 @@ use app\exceptions\QueryExecuteFailedException;
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-new DateTime('Asia/Colombo');
+new DateTimeClass('Asia/Colombo');
 Log::config();
 DbConnection::getDbConnectionInstance([
     'SERVER' => $_ENV['SERVER'],
@@ -22,7 +22,11 @@ DbConnection::getDbConnectionInstance([
     'PORT' => $_ENV['PORT']
 ]);
 $queries = new Queries();
-$currentDate = DateTime::getCurrentDateTime("Y-m-d");
+$currentDate = DateTimeClass::getCurrentDateTime("Y-m-d");
+if($argc === 1){
+    $argv[1];
+    if()
+}
 
 $tables = [
     'activity_log' => ["created_at", "updated_at"],
@@ -74,19 +78,49 @@ $tables = [
 ];
 
 try {
-    // latest cdr_call tables names
-    $latestCdrCallTables = $queries->getLatestTableName($_ENV['DB_NAME'], "cdr_call_", "_bkp", ['start' => 10, 'length' => 8]);
-    // latest cdr_sip tables names
-    $latestCdrSipTables = $queries->getLatestTableName($_ENV['DB_NAME'], "cdr_sip_", "_bkp", ['start' => 9, 'length' => 8]);
+    // latest cdr_call table
+    $latestCdrCallTable = $queries->getLatestTableNames($_ENV['DB_NAME'], "cdr_call_", "_bkp", ['start' => 10, 'length' => 8], 1);
+    // latest cdr_sip table
+    $latestCdrSipTable = $queries->getLatestTableNames($_ENV['DB_NAME'], "cdr_sip_", "_bkp", ['start' => 9, 'length' => 8], 1);
 
-    if ($latestCdrCallTables) {
-        foreach ($latestCdrCallTables as $table) {
-            $tables[$table['table_name']] = ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"];
+    if ($latestCdrCallTable) {
+        $dateLatestCdrCallTable = substr($latestCdrCallTable[0]['table_name'], 9);
+        $dateDiffData = Logic::findDateDifferenceData($currentDate, $dateLatestCdrCallTable);
+
+        if ($dateDiffData['diff'] > 0 && $dateDiffData['diff'] < 7 && $dateDiffData['direction'] === 1) {
+            $latestCdrCallTables = $queries->getLatestTableNames($_ENV['DB_NAME'], "cdr_call_", "_bkp", ['start' => 10, 'length' => 8], $dateDiffData['diff']);
+        } elseif ($dateDiffData['diff'] > 0 && $dateDiffData['diff'] >= 7 && $dateDiffData['direction'] === 1) {
+            $latestCdrCallTables = $queries->getLatestTableNames($_ENV['DB_NAME'], "cdr_call_", "_bkp", ['start' => 10, 'length' => 8], 7);
+        }
+        if (isset($latestCdrCallTables)) {
+            $date = new DateTime($currentDate);
+            foreach ($latestCdrCallTables as $table) {
+                $dateFor = $date->format('Ymd');
+                $queries->copyTableStructure($table['table_name'], "cdr_call_{$dateFor}");
+                $queries->copyTableData($table['table_name'], "cdr_call_{$dateFor}");
+                $tables["cdr_call_{$dateFor}"] = ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"];
+                $date->modify('-1 day');
+            }
         }
     }
-    if ($latestCdrSipTables) {
-        foreach ($latestCdrSipTables as $table) {
-            $tables[$table['table_name']] = ["time"];
+    if ($latestCdrSipTable) {
+        $dateLatestCdrSipTable = substr($latestCdrSipTable[0]['table_name'], 8);
+        $dateDiffData = Logic::findDateDifferenceData($currentDate, $dateLatestCdrSipTable);
+
+        if ($dateDiffData['diff'] > 0 && $dateDiffData['diff'] < 7 && $dateDiffData['direction'] === 1) {
+            $latestCdrSipTables = $queries->getLatestTableNames($_ENV['DB_NAME'], "cdr_sip_", "_bkp", ['start' => 9, 'length' => 8], $dateDiffData['diff']);
+        } elseif ($dateDiffData['diff'] > 0 && $dateDiffData['diff'] >= 7 && $dateDiffData['direction'] === 1) {
+            $latestCdrSipTables = $queries->getLatestTableNames($_ENV['DB_NAME'], "cdr_sip_", "_bkp", ['start' => 9, 'length' => 8], 7);
+        }
+        if (isset($latestCdrSipTables)) {
+            $date = new DateTime($currentDate);
+            foreach ($latestCdrSipTables as $table) {
+                $dateFor = $date->format('Ymd');
+                $queries->copyTableStructure($table['table_name'], "cdr_sip_{$dateFor}");
+                $queries->copyTableData($table['table_name'], "cdr_sip_{$dateFor}");
+                $tables["cdr_sip_{$dateFor}"] = ["time"];
+                $date->modify('-1 day');
+            }
         }
     }
 
@@ -96,12 +130,12 @@ try {
             $recentDateArray = $queries->getRecentDate($tableName, $column);
             $recentDate = $recentDateArray[0]['latest_order_date'];
             if (!$recentDate) {
-                Log::logInfo("no controller", "no function", "column has no values", "success", "table - $tableName; column - $column");
+                Log::logInfo("no controller, but in index file", "no function", "column has no values", "success", "table - $tableName; column - $column");
                 continue;
             }
             $dateDiffData = Logic::findDateDifferenceData($currentDate, $recentDate);
             if ($dateDiffData['diff'] === 0) {
-                Log::logInfo("no controller", "no function", "no difference between recent date from column and provided date", "success", "table - $tableName; column - $column");
+                Log::logInfo("no controller, but in index file", "no function", "no difference between recent date from column and provided date", "success", "table - $tableName; column - $column");
                 continue;
             }
             if ($dateDiffData['direction'] === 1) {
@@ -109,7 +143,7 @@ try {
             } else {
                 $columnsWithData[$column] = ['modifier' => "sub", 'dateDiff' => $dateDiffData['diff']];
             }
-            Log::logInfo("no controller", "no function", "there is difference between recent date from column and provided date", "success", "table - $tableName; column - $column; diff - {$dateDiffData['diff']}; direction - {$dateDiffData['direction']}");
+            Log::logInfo("no controller, but in index file", "no function", "there is difference between recent date from column and provided date", "success", "table - $tableName; column - $column; diff - {$dateDiffData['diff']}; direction - {$dateDiffData['direction']}");
 
         }
         if (count($columnsWithData) === 0) {
@@ -120,11 +154,11 @@ try {
     }
 
 } catch (PrepareQueryFailedException $exception) {
-    Log::logError("no controller", "no function", "Exception raised...", "failed", $exception->getMessage());
+    Log::logError("no controller, but in index file", "no function", "Exception raised...", "failed", $exception->getMessage());
 } catch (QueryExecuteFailedException $exception) {
-    Log::logError("no controller", "no function", "Exception raised...", "failed", $exception->getMessage());
+    Log::logError("no controller, but in index file", "no function", "Exception raised...", "failed", $exception->getMessage());
 } catch (Exception $exception) {
-    Log::logError("no controller", "no function", "Exception raised...", "failed", $exception->getMessage());
+    Log::logError("no controller, but in index file", "no function", "Exception raised...", "failed", $exception->getMessage());
 }
 
 

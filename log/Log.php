@@ -5,7 +5,7 @@ namespace app\log;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
-use app\datetime\DateTime;
+use app\datetime\DateTimeClass;
 
 class Log
 {
@@ -14,7 +14,7 @@ class Log
 
     public static function config()
     {
-        self::$id = uniqid(DateTime::getCurrentDateTime('YmdHis'));
+        self::$id = uniqid(DateTimeClass::getCurrentDateTime('YmdHis'));
     }
 
     public static function getLogger()

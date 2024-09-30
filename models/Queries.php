@@ -86,7 +86,7 @@ class Queries
         return $statement->affected_rows;
     }
 
-    public function getLatestTableName(string $dbName, string $tablePrefix, string $tableRemovePart,array $numericPart) : array|bool
+    public function getLatestTableNames(string $dbName, string $tablePrefix, string $tableRemovePart, array $numericPart, int $limit): array|bool
     {
         $numericPartStart = $numericPart['start'];
         $numericPartLength = $numericPart['length'];
@@ -97,7 +97,7 @@ class Queries
             AND table_name LIKE '{$tablePrefix}%' 
             AND table_name NOT LIKE '%{$tableRemovePart}' 
             ORDER BY CAST(SUBSTRING(table_name, $numericPartStart, $numericPartLength) AS UNSIGNED) DESC
-            LIMIT 7;
+            LIMIT $limit;
         ";
 
         $statement = $this->prepareQuery($query);
@@ -113,12 +113,46 @@ class Queries
 
         $resultArray = $result->fetch_all(MYSQLI_ASSOC);
 
-        if(count($resultArray) === 0){
+        if (count($resultArray) === 0) {
 
             return false;
         }
 
         return $resultArray;
+    }
+
+    public function copyTableStructure(string $originalTable,string $newTable)
+    {
+        $query = "
+            CREATE TABLE $newTable LIKE $originalTable
+        ";
+
+        $statement = $this->prepareQuery($query);
+
+        if ($statement === false)
+            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "copyTableStructure");
+
+        if ($statement->execute() === false) {
+            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "copyTableStructure");
+        }
+        Log::logInfo("Queries", "copyTableStructure", "copy table structure into new table", "success", "data => original table - $originalTable; new table - $newTable");
+    }
+
+    public function copyTableData(string $originalTable,string $newTable)
+    {
+        $query = "
+            INSERT INTO $newTable SELECT * FROM $originalTable
+        ";
+
+        $statement = $this->prepareQuery($query);
+
+        if ($statement === false)
+            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "copyTableData");
+
+        if ($statement->execute() === false) {
+            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "copyTableData");
+        }
+        Log::logInfo("Queries", "copyTableData", "copy table data into new table", "success", "data => data => original table - $originalTable; new table - $newTable");
     }
 }
 
