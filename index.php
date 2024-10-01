@@ -23,9 +23,10 @@ DbConnection::getDbConnectionInstance([
 ]);
 $queries = new Queries();
 $currentDate = DateTimeClass::getCurrentDateTime("Y-m-d");
-if($argc === 1){
-    $argv[1];
-    if()
+if($argc === 2){
+    if(preg_match('/^\d{4}-\d{2}-\d{2}$/', $argv[1])){
+        $currentDate = $argv[1];
+    }
 }
 
 $tables = [
