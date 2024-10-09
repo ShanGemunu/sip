@@ -115,8 +115,8 @@ class Queries
 
         foreach ($columnsWithData as $columnName => $data) {
             if($uniqueColumnNames){
-                if(in_array($columnName, $uniqueColumnNames)){
-                    $orderBy = "ORDER BY $columnName";
+                if(in_array(['column_name'=>$columnName], $uniqueColumnNames)){
+                    $orderBy = "ORDER BY $columnName DESC";
                 }
             }
             
@@ -131,24 +131,6 @@ class Queries
             UPDATE $table SET 
                 $setData $orderBy 
         ";
-
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
 
         $statement = $this->prepareQuery($query);
 
