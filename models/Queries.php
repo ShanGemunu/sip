@@ -11,9 +11,14 @@ use app\exceptions\QueryExecuteFailedException;
 class Queries
 {
     private static $dbName;
+    private static $batchSize;
+    private static $sleepTimeInSec;
 
-    function __construct($db_name){
+    function __construct(string $db_name, int $batchSize_ = 10000, int $sleepTimeInSec_ = 1)
+    {
         self::$dbName = $db_name;
+        self::$batchSize = $batchSize_;
+        self::$sleepTimeInSec = $sleepTimeInSec_;
     }
 
     /** 
@@ -53,6 +58,58 @@ class Queries
 
         return $result->fetch_all(MYSQLI_ASSOC);
 
+    }
+
+    /** 
+     *    update dates of tables
+     *    @param string $table 
+     *    @param array $columnsWithData 
+     *    @return int  
+     */
+    public function updateDates(string $table, array $columnsWithData): void
+    {
+        $setData = "";
+        $uniqueColumnNames = $this->getUniqueCoulmnNames($table);
+        $orderBy = "";
+        $numberOfRows = $this->countRows($table);
+        $batchSize = self::$batchSize;        // Number of rows to update per batch
+        $sleepTime = self::$sleepTimeInSec;            // Sleep time in seconds between batches
+        $offset = 0;
+
+        foreach ($columnsWithData as $columnName => $data) {
+            if($uniqueColumnNames){
+                if(in_array(['column_name'=>$columnName], $uniqueColumnNames)){
+                    $orderBy = "ORDER BY $columnName DESC";
+                }
+            }
+            $modifier = ($data['modifier'] === "add") ? "DATE_ADD" : "DATE_SUB";
+            $dateDiff = $data['dateDiff'];
+            $setData .= "$columnName = IF($columnName IS NOT NULL ,$modifier($columnName, INTERVAL $dateDiff DAY),$columnName),";
+        }
+
+        $setData = substr($setData, 0, -1);
+
+        while ($offset <= $numberOfRows) {
+            $query = "
+            UPDATE $table SET 
+                $setData $orderBy
+                LIMIT $batchSize OFFSET $offset 
+            ";
+
+            $statement = $this->prepareQuery($query);
+
+            if ($statement === false)
+                throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
+
+            if ($statement->execute() === false) {
+                throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
+            }
+            Log::logInfo("Queries", "updateDates", "update a batch of dates of table", "success", "data => table - $table; set data - $setData; offset- $offset; batch size - $batchSize");
+            $offset += $batchSize;
+            sleep($sleepTime);
+        }
+
+        Log::logInfo("Queries", "updateDates", "update all dates of table is successful", "success", "data => table - $table; set data - $setData; batch size - $batchSize; total number of rows - $numberOfRows");
     }
 
     /** 
@@ -99,50 +156,6 @@ class Queries
         Log::logInfo("Queries", "getUniqueCoulmnNames", "get unique column names of a table", "success", "unique columns - $logData");
 
         return $resultArray;
-    }
-
-    /** 
-     *    update dates of tables
-     *    @param string $table 
-     *    @param array $columnsWithData 
-     *    @return int  
-     */
-    public function updateDates(string $table, array $columnsWithData): int
-    {
-        $setData = "";
-        $uniqueColumnNames = $this->getUniqueCoulmnNames($table);
-        $orderBy = "";
-
-        foreach ($columnsWithData as $columnName => $data) {
-            if($uniqueColumnNames){
-                if(in_array(['column_name'=>$columnName], $uniqueColumnNames)){
-                    $orderBy = "ORDER BY $columnName DESC";
-                }
-            }
-            
-            $modifier = ($data['modifier'] === "add") ? "DATE_ADD" : "DATE_SUB";
-            $dateDiff = $data['dateDiff'];
-            $setData .= "$columnName = IF($columnName IS NOT NULL ,$modifier($columnName, INTERVAL $dateDiff DAY),$columnName),";
-        }
-
-        $setData = substr($setData, 0, -1);
-
-        $query = "
-            UPDATE $table SET 
-                $setData $orderBy 
-        ";
-
-        $statement = $this->prepareQuery($query);
-
-        if ($statement === false)
-            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
-
-        if ($statement->execute() === false) {
-            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
-        }
-        Log::logInfo("Queries", "updateDates", "update dates of tables", "success", "data => table - $table; set data - $setData");
-
-        return $statement->affected_rows;
     }
 
     public function getLatestTableNames(string $tablePrefix, string $tableRemovePart, array $numericPart, int $limit): array|bool
@@ -199,22 +212,30 @@ class Queries
         Log::logInfo("Queries", "copyTable", "copy table structure and data into new table", "success", "data => original table - $originalTable; new table - $newTable");
     }
 
-    // public function copyTableData(string $originalTable, string $newTable)
-    // {
-    //     $query = "
-    //         INSERT INTO $newTable SELECT * FROM $originalTable
-    //     ";
+    private function countRows(string $tableName): int
+    {
+        $query = "
+            SELECT COUNT(*) FROM $tableName
+        ";
 
-    //     $statement = $this->prepareQuery($query);
+        $statement = $this->prepareQuery($query);
 
-    //     if ($statement === false)
-    //         throw new PrepareQueryFailedException("failed query - $query", Queries::class, "copyTableData");
+        if ($statement === false)
+            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "countRows");
 
-    //     if ($statement->execute() === false) {
-    //         throw new QueryExecuteFailedException("failed query - $query", Queries::class, "copyTableData");
-    //     }
-    //     Log::logInfo("Queries", "copyTableData", "copy table data into new table", "success", "data => data => original table - $originalTable; new table - $newTable");
-    // }
+        if ($statement->execute() === false) {
+            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "countRows");
+        }
+
+        $result = $statement->get_result();
+
+        $resultArray = $result->fetch_all(MYSQLI_ASSOC);
+        $count = $resultArray[0]['COUNT(*)'];
+
+        Log::logInfo("Queries", "countRows", "get total number of rows of table", "success", "table - $tableName; number of rows - $count");
+
+        return $count;
+    }
 }
 
 
