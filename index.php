@@ -30,7 +30,7 @@ if ($argc === 2) {
 }
 
 $tables = [
-    // 'activity_log' => ["created_at", "updated_at"],
+    'activity_log' => [["created_at", "updated_at"],"id"],
     // 'alarms_carrier_history' => ["date_time"],
     // 'alarms_country_history' => ["date_time"],
     // 'alarms_network_history' => ["date_time"],
@@ -56,7 +56,7 @@ $tables = [
     // 'j_idd_hourly_stats' => ["date_"],
     // 'j_network_data' => ["created_at", "updated_at", "deleted_at"],
     // 'j_networks' => ["created_at", "updated_at", "deleted_at"],
-    'nw_cc_top_dest' => ["date"],
+    // 'nw_cc_top_dest' => [["date"],"id"],
     // 'report_daily_72_78_outgoing_traffic' => ["date"],
     // 'report_daily_country_carrier_wise_traffic' => ["date"],
     // 'report_daily_country_carrier_wise_traffic1' => ["date"],
@@ -95,8 +95,9 @@ try {
             $date = new DateTime($currentDate);
             foreach ($latestCdrCallTables as $table) {
                 $dateFor = $date->format('Ymd');
-                $queries->copyTable($table['table_name'], "cdr_call_{$dateFor}");
-                $tables["cdr_call_{$dateFor}"] = ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"];
+                $queries->copyTableStructure($table['table_name'], "cdr_call_{$dateFor}");
+                $queries->copyTableData($table['table_name'], "cdr_call_{$dateFor}");
+                $tables["cdr_call_{$dateFor}"] = [["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],"id"];
                 $date->modify('-1 day');
             }
         }
@@ -114,14 +115,16 @@ try {
             $date = new DateTime($currentDate);
             foreach ($latestCdrSipTables as $table) {
                 $dateFor = $date->format('Ymd');
-                $queries->copyTable($table['table_name'], "cdr_sip_{$dateFor}");
-                $tables["cdr_sip_{$dateFor}"] = ["time"];
+                $queries->copyTableStructure($table['table_name'], "cdr_sip_{$dateFor}");
+                $queries->copyTableData($table['table_name'], "cdr_sip_{$dateFor}");
+                $tables["cdr_sip_{$dateFor}"] = [["time"],"id"];
                 $date->modify('-1 day');
             }
         }
     }
 
-    foreach ($tables as $tableName => $columns) {
+    foreach ($tables as $tableName => $values) {
+        $columns = $values[0];
         $columnsWithData = [];
         foreach ($columns as $column) {
             $recentDateArray = $queries->getRecentDate($tableName, $column);
@@ -146,7 +149,7 @@ try {
             continue;
         }
 
-        $queries->updateDates($tableName, $columnsWithData);
+        $queries->updateDates($tableName, $columnsWithData, $values[1]);
     }
 
 } catch (PrepareQueryFailedException $exception) {

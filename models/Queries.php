@@ -66,7 +66,7 @@ class Queries
      *    @param array $columnsWithData 
      *    @return int  
      */
-    public function updateDates(string $table, array $columnsWithData): void
+    public function updateDates(string $table, array $columnsWithData, string $primaryKey): void
     {
         $setData = "";
         $uniqueColumnNames = $this->getUniqueCoulmnNames($table);
@@ -77,8 +77,8 @@ class Queries
         $offset = 0;
 
         foreach ($columnsWithData as $columnName => $data) {
-            if($uniqueColumnNames){
-                if(in_array(['column_name'=>$columnName], $uniqueColumnNames)){
+            if ($uniqueColumnNames) {
+                if (in_array(['column_name' => $columnName], $uniqueColumnNames)) {
                     $orderBy = "ORDER BY $columnName DESC";
                 }
             }
@@ -90,10 +90,18 @@ class Queries
         $setData = substr($setData, 0, -1);
 
         while ($offset <= $numberOfRows) {
+
             $query = "
-            UPDATE $table SET 
-                $setData $orderBy
-                LIMIT $batchSize OFFSET $offset 
+                UPDATE $table
+                SET
+                $setData
+                WHERE $primaryKey IN (
+                    SELECT $primaryKey FROM (
+                        SELECT $primaryKey FROM $table 
+                        $orderBy
+                        LIMIT $batchSize OFFSET $offset
+                    ) as temp_table 
+                )
             ";
 
             $statement = $this->prepareQuery($query);
@@ -104,10 +112,53 @@ class Queries
             if ($statement->execute() === false) {
                 throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
             }
-            Log::logInfo("Queries", "updateDates", "update a batch of dates of table", "success", "data => table - $table; set data - $setData; offset- $offset; batch size - $batchSize");
+            Log::logInfo("Queries", "updateDates", "updates a batch of dates of table", "success", "data => table - $table; offset- $offset; batch size - $batchSize");
+
+
             $offset += $batchSize;
             sleep($sleepTime);
         }
+
+        // while ($offset <= $numberOfRows) {
+        //     $query = "
+        //         SELECT * FROM $table $orderBy
+        //         LIMIT $batchSize OFFSET $offset 
+        //     ";
+
+        //     $statement = $this->prepareQuery($query);
+
+        //     if ($statement === false)
+        //         throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
+
+        //     if ($statement->execute() === false) {
+        //         throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
+        //     }
+        //     Log::logInfo("Queries", "updateDates", "select a batch of dates of table", "success", "data => table - $table; offset- $offset; batch size - $batchSize");
+
+        //     $result = $statement->get_result();
+        //     $dateSet = $result->fetch_all(MYSQLI_ASSOC);
+
+        //     foreach ($dateSet as $date) {
+        //         $query = "
+        //         UPDATE $table SET
+        //         $setData
+        //         WHERE $primaryKey = {$date[$primaryKey]}
+        //          ";
+
+        //         $statement = $this->prepareQuery($query);
+
+        //         if ($statement === false)
+        //             throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
+
+        //         if ($statement->execute() === false) {
+        //             throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
+        //         }
+        //         Log::logInfo("Queries", "updateDates", "select a batch of dates of table", "success", "data => table - $table; offset- $offset; batch size - $batchSize");
+        //     }
+
+        //     $offset += $batchSize;
+        //     sleep($sleepTime);
+        // }
 
         Log::logInfo("Queries", "updateDates", "update all dates of table is successful", "success", "data => table - $table; set data - $setData; batch size - $batchSize; total number of rows - $numberOfRows");
     }
@@ -118,7 +169,7 @@ class Queries
      *    @param array $columnsWithData 
      *    @return array|bool
      */
-    public function getUniqueCoulmnNames(string $tableName) : array|bool
+    public function getUniqueCoulmnNames(string $tableName): array|bool
     {
         $dbName = self::$dbName;
 
@@ -150,8 +201,8 @@ class Queries
             return false;
         }
         $logData = "";
-        foreach($resultArray as $columnNames){
-            $logData .= $columnNames['column_name']."|";
+        foreach ($resultArray as $columnNames) {
+            $logData .= $columnNames['column_name'] . "|";
         }
         Log::logInfo("Queries", "getUniqueCoulmnNames", "get unique column names of a table", "success", "unique columns - $logData");
 
@@ -194,11 +245,27 @@ class Queries
         return $resultArray;
     }
 
-    public function copyTable(string $originalTable, string $newTable)
+    public function copyTableStructure(string $originalTable, string $newTable)
     {
-        //   CREATE TABLE $newTable LIKE $originalTable
         $query = "
-            CREATE TABLE $newTable SELECT * FROM $originalTable
+            CREATE TABLE $newTable LIKE $originalTable
+        ";
+
+        $statement = $this->prepareQuery($query);
+
+        if ($statement === false)
+            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "copyTable");
+
+        if ($statement->execute() === false) {
+            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "copyTable");
+        }
+        Log::logInfo("Queries", "copyTable", "copy table structure and data into new table", "success", "data => original table - $originalTable; new table - $newTable");
+    }
+
+    public function copyTableData(string $originalTable, string $newTable)
+    {
+        $query = "
+            INSERT INTO $newTable SELECT * FROM $originalTable
         ";
 
         $statement = $this->prepareQuery($query);
