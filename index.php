@@ -30,13 +30,13 @@ if ($argc === 2) {
 }
 
 $tables = [
-    'activity_log' => [["created_at", "updated_at"],"id"],
+    // 'activity_log' => ["created_at", "updated_at"],
     // 'alarms_carrier_history' => ["date_time"],
     // 'alarms_country_history' => ["date_time"],
     // 'alarms_network_history' => ["date_time"],
     // 'carrier_wise_traffic1' => ["date"],
     // 'cdr_dialogs' => ["time", "ringing", "answered", "end"],
-    // 'cr_acd_mou' => ["report_date"],
+    'cr_acd_mou' => ["report_date"],
     // 'cr_cc_asr_mou' => ["report_date"],
     // 'ct_mou_top_dest' => ["date"],
     // 'ct_mou_variance' => ["date"],
@@ -56,7 +56,7 @@ $tables = [
     // 'j_idd_hourly_stats' => ["date_"],
     // 'j_network_data' => ["created_at", "updated_at", "deleted_at"],
     // 'j_networks' => ["created_at", "updated_at", "deleted_at"],
-    // 'nw_cc_top_dest' => [["date"],"id"],
+    // 'nw_cc_top_dest' => ["date"],
     // 'report_daily_72_78_outgoing_traffic' => ["date"],
     // 'report_daily_country_carrier_wise_traffic' => ["date"],
     // 'report_daily_country_carrier_wise_traffic1' => ["date"],
@@ -66,7 +66,7 @@ $tables = [
     // 'report_hourly_country_carrier_wise_traffic_old' => ["hour"],
     // 'report_hourly_country_carrier_wise_traffic_test' => ["hour"],
     // 'report_hourly_country_carrier_wise_traffic_test_2' => ["hour"],
-    // 'report_hourly_country_network_carrier_wise_traffic' => ["hour"],
+    // 'report_hourly_country_network_carrier_wise_traffic' =>["hour"],
     // 'system_parameters' => ["created_at", "updated_at", "deleted_at"],
     // 'temp1_cdr_call_20210217' => ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],
     // 'temp1_cdr_sip_20210217' => ["time"],
@@ -97,7 +97,7 @@ try {
                 $dateFor = $date->format('Ymd');
                 $queries->copyTableStructure($table['table_name'], "cdr_call_{$dateFor}");
                 $queries->copyTableData($table['table_name'], "cdr_call_{$dateFor}");
-                $tables["cdr_call_{$dateFor}"] = [["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],"id"];
+                $tables["cdr_call_{$dateFor}"] = ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"];
                 $date->modify('-1 day');
             }
         }
@@ -117,14 +117,13 @@ try {
                 $dateFor = $date->format('Ymd');
                 $queries->copyTableStructure($table['table_name'], "cdr_sip_{$dateFor}");
                 $queries->copyTableData($table['table_name'], "cdr_sip_{$dateFor}");
-                $tables["cdr_sip_{$dateFor}"] = [["time"],"id"];
+                $tables["cdr_sip_{$dateFor}"] = ["time"];
                 $date->modify('-1 day');
             }
         }
     }
 
-    foreach ($tables as $tableName => $values) {
-        $columns = $values[0];
+    foreach ($tables as $tableName => $columns) {
         $columnsWithData = [];
         foreach ($columns as $column) {
             $recentDateArray = $queries->getRecentDate($tableName, $column);
@@ -149,7 +148,7 @@ try {
             continue;
         }
 
-        $queries->updateDates($tableName, $columnsWithData, $values[1]);
+        $queries->updateDates($tableName, $columnsWithData);
     }
 
 } catch (PrepareQueryFailedException $exception) {

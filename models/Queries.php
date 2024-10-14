@@ -66,15 +66,11 @@ class Queries
      *    @param array $columnsWithData 
      *    @return int  
      */
-    public function updateDates(string $table, array $columnsWithData, string $primaryKey): void
+    public function updateDates(string $table, array $columnsWithData): void
     {
         $setData = "";
         $uniqueColumnNames = $this->getUniqueCoulmnNames($table);
         $orderBy = "";
-        $numberOfRows = $this->countRows($table);
-        $batchSize = self::$batchSize;        // Number of rows to update per batch
-        $sleepTime = self::$sleepTimeInSec;            // Sleep time in seconds between batches
-        $offset = 0;
 
         foreach ($columnsWithData as $columnName => $data) {
             if ($uniqueColumnNames) {
@@ -89,35 +85,23 @@ class Queries
 
         $setData = substr($setData, 0, -1);
 
-        while ($offset <= $numberOfRows) {
 
-            $query = "
+        $query = "
                 UPDATE $table
                 SET
-                $setData
-                WHERE $primaryKey IN (
-                    SELECT $primaryKey FROM (
-                        SELECT $primaryKey FROM $table 
-                        $orderBy
-                        LIMIT $batchSize OFFSET $offset
-                    ) as temp_table 
-                )
+                $setData  
+                $orderBy     
             ";
 
-            $statement = $this->prepareQuery($query);
+        $statement = $this->prepareQuery($query);
 
-            if ($statement === false)
-                throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
+        if ($statement === false)
+            throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
 
-            if ($statement->execute() === false) {
-                throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
-            }
-            Log::logInfo("Queries", "updateDates", "updates a batch of dates of table", "success", "data => table - $table; offset- $offset; batch size - $batchSize");
-
-
-            $offset += $batchSize;
-            sleep($sleepTime);
+        if ($statement->execute() === false) {
+            throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
         }
+
 
         // while ($offset <= $numberOfRows) {
         //     $query = "
@@ -133,7 +117,7 @@ class Queries
         //     if ($statement->execute() === false) {
         //         throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
         //     }
-        //     Log::logInfo("Queries", "updateDates", "select a batch of dates of table", "success", "data => table - $table; offset- $offset; batch size - $batchSize");
+        //     Log::logInfo("Queries", functionName: "updateDates", "select a batch of dates of table", "success", "data => table - $table; offset- $offset; batch size - $batchSize");
 
         //     $result = $statement->get_result();
         //     $dateSet = $result->fetch_all(MYSQLI_ASSOC);
@@ -160,7 +144,7 @@ class Queries
         //     sleep($sleepTime);
         // }
 
-        Log::logInfo("Queries", "updateDates", "update all dates of table is successful", "success", "data => table - $table; set data - $setData; batch size - $batchSize; total number of rows - $numberOfRows");
+        Log::logInfo("Queries", "updateDates", "update all dates of table is successful", "success", "table - $table");
     }
 
     /** 
