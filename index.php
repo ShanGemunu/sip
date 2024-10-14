@@ -36,7 +36,7 @@ $tables = [
     // 'alarms_network_history' => ["date_time"],
     // 'carrier_wise_traffic1' => ["date"],
     // 'cdr_dialogs' => ["time", "ringing", "answered", "end"],
-    'cr_acd_mou' => ["report_date"],
+    // 'cr_acd_mou' => ["report_date"],
     // 'cr_cc_asr_mou' => ["report_date"],
     // 'ct_mou_top_dest' => ["date"],
     // 'ct_mou_variance' => ["date"],
@@ -56,7 +56,7 @@ $tables = [
     // 'j_idd_hourly_stats' => ["date_"],
     // 'j_network_data' => ["created_at", "updated_at", "deleted_at"],
     // 'j_networks' => ["created_at", "updated_at", "deleted_at"],
-    // 'nw_cc_top_dest' => ["date"],
+    'nw_cc_top_dest' => [["date"],"id"],
     // 'report_daily_72_78_outgoing_traffic' => ["date"],
     // 'report_daily_country_carrier_wise_traffic' => ["date"],
     // 'report_daily_country_carrier_wise_traffic1' => ["date"],
@@ -78,7 +78,7 @@ $tables = [
 
 try {    
     // latest cdr_call table
-    $latestCdrCallTable = $queries->getLatestTableNames("cdr_call_", "_bkp", ['start' => 10, 'length' => 8], 1);
+    $latestCdrCallTable = $queries->getLatestTableNames("cdr_call_", "_bkp", ['start' => 10, 'length' => 8], limit: 1);
     // latest cdr_sip table
     $latestCdrSipTable = $queries->getLatestTableNames("cdr_sip_", "_bkp", ['start' => 9, 'length' => 8], 1);
 
@@ -97,7 +97,7 @@ try {
                 $dateFor = $date->format('Ymd');
                 $queries->copyTableStructure($table['table_name'], "cdr_call_{$dateFor}");
                 $queries->copyTableData($table['table_name'], "cdr_call_{$dateFor}");
-                $tables["cdr_call_{$dateFor}"] = ["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"];
+                $tables["cdr_call_{$dateFor}"] = [["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],"id"];
                 $date->modify('-1 day');
             }
         }
@@ -117,14 +117,15 @@ try {
                 $dateFor = $date->format('Ymd');
                 $queries->copyTableStructure($table['table_name'], "cdr_sip_{$dateFor}");
                 $queries->copyTableData($table['table_name'], "cdr_sip_{$dateFor}");
-                $tables["cdr_sip_{$dateFor}"] = ["time"];
+                $tables["cdr_sip_{$dateFor}"] = [["time"],"id"];
                 $date->modify('-1 day');
             }
         }
     }
 
-    foreach ($tables as $tableName => $columns) {
+    foreach ($tables as $tableName => $values) {
         $columnsWithData = [];
+        $columns = $values[0];
         foreach ($columns as $column) {
             $recentDateArray = $queries->getRecentDate($tableName, $column);
             $recentDate = $recentDateArray[0]['latest_order_date'];
@@ -148,7 +149,7 @@ try {
             continue;
         }
 
-        $queries->updateDates($tableName, $columnsWithData);
+        $queries->updateDates($tableName, $columnsWithData, $values[1]);
     }
 
 } catch (PrepareQueryFailedException $exception) {
