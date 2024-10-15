@@ -89,28 +89,44 @@ class Queries
 
         $setData = substr($setData, 0, -1);
 
-        while ($offset <= $numberOfRows) {
+        if($primaryKey){
+            while ($offset <= $numberOfRows) {
+                $query = "
+                UPDATE $table
+                SET 
+                $setData
+                WHERE $primaryKey IN (
+                    SELECT $primaryKey FROM (
+                        SELECT $primaryKey FROM $table
+                        $orderBy
+                        LIMIT $batchSize OFFSET $offset
+                    ) as temp_table
+                )$orderBy
+                ";
+                $statement = $this->prepareQuery($query);
+                if ($statement === false){
+                    throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
+                }
+                if ($statement->execute() === false) {
+                    throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
+                }
+                Log::logInfo("Queries", "updateDates", "update a batch of dates of table", "success", "data => table - $table; set data - $setData; order by - $orderBy ;offset- $offset; batch size - $batchSize");
+                $offset += $batchSize;
+                sleep($sleepTime);
+            }
+        }else{
             $query = "
-            UPDATE $table
-            SET 
-            $setData
-            WHERE $primaryKey IN (
-                SELECT $primaryKey FROM (
-                    SELECT $primaryKey FROM $table
-                    $orderBy
-                    LIMIT $batchSize OFFSET $offset
-                ) as temp_table
-            )
+                UPDATE $table
+                SET 
+                $setData
             ";
             $statement = $this->prepareQuery($query);
-            if ($statement === false)
+            if ($statement === false){
                 throw new PrepareQueryFailedException("failed query - $query", Queries::class, "updateDates");
+            }
             if ($statement->execute() === false) {
                 throw new QueryExecuteFailedException("failed query - $query", Queries::class, "updateDates");
             }
-            Log::logInfo("Queries", "updateDates", "update a batch of dates of table", "success", "data => table - $table; set data - $setData; offset- $offset; batch size - $batchSize");
-            $offset += $batchSize;
-            sleep($sleepTime);
         }
 
         Log::logInfo("Queries", "updateDates", "update all dates of table is successful", "success", "table - $table; set data - $setData; order clause - $orderBy");
