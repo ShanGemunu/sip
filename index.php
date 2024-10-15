@@ -21,7 +21,7 @@ DbConnection::getDbConnectionInstance([
     'DB_NAME' => $_ENV['DB_NAME'],
     'PORT' => $_ENV['PORT']
 ]);
-$queries = new Queries($_ENV['DB_NAME'],$_ENV['BATCH_SIZE'],$_ENV['SLEEP_TIME_SEC']);
+$queries = new Queries($_ENV['DB_NAME'], $_ENV['BATCH_SIZE'], $_ENV['SLEEP_TIME_SEC']);
 $currentDate = DateTimeClass::getCurrentDateTime("Y-m-d");
 if ($argc === 2) {
     if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $argv[1])) {
@@ -30,38 +30,38 @@ if ($argc === 2) {
 }
 
 $tables = [
-    // 'activity_log' => ["created_at", "updated_at"],
-    // 'alarms_carrier_history' => ["date_time"],
-    // 'alarms_country_history' => ["date_time"],
-    // 'alarms_network_history' => ["date_time"],
-    // 'cdr_dialogs' => ["time", "ringing", "answered", "end"],
-    'cr_acd_mou' => [["report_date"],"id"],
-    // 'cr_cc_asr_mou' => ["report_date"],
-    // 'ct_mou_top_dest' => ["date"],
-    // 'ct_mou_variance' => ["date"],
-    // 'flash_call_labels' => ["update_time"],
-    // 'idd_hourly_carrier_level_quality_score' => ["date_time"],
-    // 'idd_hourly_country_level_quality_score' => ["date_time"],
-    // 'idd_hourly_network_level_quality_score' => ["date_time"],
-    // 'idd_hourly_stats' => ["date_"],
-    // 'idd_hourly_trend_outlier_carrier_level' => ["date_time"],
-    // 'idd_hourly_trend_outlier_country_level' => ["date_time"],
-    // 'idd_hourly_trend_outlier_network_level' => ["date_time"],
-    // 'idd_outlier_alarm_history' => ["created_at"],
-    // 'idd_outlier_hourly' => ["running_time"],
-    // 'idd_outlier_ten_min' => ["running_time"],
-    // 'nw_cc_top_dest' => [["date"],"id"],
-    // 'report_daily_72_78_outgoing_traffic' => ["date"],
-    // 'report_daily_country_carrier_wise_traffic' => ["date"],
-    // 'report_daily_country_carrier_wise_traffic_quality' => ["date"],
-    // 'report_hourly_country_carrier_wise_traffic' => ["hour"],
-    // 'report_hourly_country_carrier_wise_traffic_test' => ["hour"],
-    // 'report_hourly_country_network_carrier_wise_traffic' =>["hour"],
-    // 'system_parameters' => ["created_at", "updated_at", "deleted_at"],
-    // 'total_mou_on_wk_day' => ["report_date"]
+    'activity_log' => [["created_at", "updated_at"],"id"],
+    'alarms_carrier_history' => [["date_time"],"id"],
+    'alarms_country_history' => [["date_time"],"id"],
+    'alarms_network_history' => [["date_time"],"id"],
+    'cdr_dialogs' => [["time", "ringing", "answered", "end"],"id"],
+    'cr_acd_mou' => [["report_date"], "id"],
+    'cr_cc_asr_mou' => [["report_date"],"id"],
+    'ct_mou_top_dest' => [["date"],"id"],
+    'ct_mou_variance' => [["date"],"id"],
+    'flash_call_labels' => [["update_time"],"cli"],
+    'idd_hourly_carrier_level_quality_score' => [["date_time"]],
+    'idd_hourly_country_level_quality_score' => [["date_time"]],
+    'idd_hourly_network_level_quality_score' => [["date_time"]],
+    'idd_hourly_stats' => [["date_"]],
+    'idd_hourly_trend_outlier_carrier_level' => [["date_time"]],
+    'idd_hourly_trend_outlier_country_level' => [["date_time"]],
+    'idd_hourly_trend_outlier_network_level' => [["date_time"]],
+    'idd_outlier_alarm_history' => [["created_at"],"id"],
+    'idd_outlier_hourly' => [["running_time"]],
+    'idd_outlier_ten_min' => [["running_time"]],
+    'nw_cc_top_dest' => [["date"],"id"],
+    'report_daily_72_78_outgoing_traffic' => [["date"],"date"],
+    'report_daily_country_carrier_wise_traffic' => [["date"]],
+    'report_daily_country_carrier_wise_traffic_quality' => [["date"],"id"],
+    'report_hourly_country_carrier_wise_traffic' => [["hour"],"id"],
+    'report_hourly_country_carrier_wise_traffic_test' => [["hour"],"id"],
+    'report_hourly_country_network_carrier_wise_traffic' =>[["hour"],"id"],
+    'system_parameters' => [["created_at", "updated_at", "deleted_at"],"id"],
+    'total_mou_on_wk_day' => [["report_date"],"id"]
 ];
 
-try {    
+try {
     // latest cdr_call table
     $latestCdrCallTable = $queries->getLatestTableNames("cdr_call_", "_bkp", ['start' => 10, 'length' => 8], limit: 1);
     // latest cdr_sip table
@@ -82,7 +82,7 @@ try {
                 $dateFor = $date->format('Ymd');
                 $queries->copyTableStructure($table['table_name'], "cdr_call_{$dateFor}");
                 $queries->copyTableData($table['table_name'], "cdr_call_{$dateFor}");
-                $tables["cdr_call_{$dateFor}"] = [["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"],"id"];
+                $tables["cdr_call_{$dateFor}"] = [["invite_time", "ringing_time", "answered_time", "ack_time", "bye_time", "cancel_time"], "id"];
                 $date->modify('-1 day');
             }
         }
@@ -102,7 +102,7 @@ try {
                 $dateFor = $date->format('Ymd');
                 $queries->copyTableStructure($table['table_name'], "cdr_sip_{$dateFor}");
                 $queries->copyTableData($table['table_name'], "cdr_sip_{$dateFor}");
-                $tables["cdr_sip_{$dateFor}"] = [["time"],"id"];
+                $tables["cdr_sip_{$dateFor}"] = [["time"], "id"];
                 $date->modify('-1 day');
             }
         }
@@ -134,7 +134,9 @@ try {
             continue;
         }
 
-        $queries->updateDates($tableName, $columnsWithData, $values[1]);
+        isset($values[1]) ? $queries->updateDates($tableName, $columnsWithData, $values[1]) :
+            $queries->updateDates($tableName, $columnsWithData);
+
     }
 
 } catch (PrepareQueryFailedException $exception) {

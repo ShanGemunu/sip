@@ -66,7 +66,7 @@ class Queries
      *    @param array $columnsWithData 
      *    @return int  
      */
-    public function updateDates(string $table, array $columnsWithData, string $primaryKey): void
+    public function updateDates(string $table, array $columnsWithData, string $primaryKey = null): void
     {
         $setData = "";
         $uniqueColumnNames = $this->getUniqueCoulmnNames($table);
