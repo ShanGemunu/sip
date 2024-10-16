@@ -119,6 +119,7 @@ class Queries
                 UPDATE $table
                 SET 
                 $setData
+                $orderBy
             ";
             $statement = $this->prepareQuery($query);
             if ($statement === false){

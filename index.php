@@ -57,7 +57,6 @@ $tables = [
     'report_hourly_country_carrier_wise_traffic' => [["hour"],"id"],
     'report_hourly_country_carrier_wise_traffic_test' => [["hour"],"id"],
     'report_hourly_country_network_carrier_wise_traffic' =>[["hour"],"id"],
-    'system_parameters' => [["created_at", "updated_at", "deleted_at"],"id"],
     'total_mou_on_wk_day' => [["report_date"],"id"]
 ];
 
