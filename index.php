@@ -118,7 +118,20 @@ try {
                 continue;
             }
             $recentDate = substr_replace($recentDate, '', 10);
-            $dateDiffData = Logic::findDateDifferenceData($currentDate, $recentDate);
+            
+            if(substr($tableName, 0, 8) === "cdr_sip_" || substr($tableName, 0, 9) === "cdr_call_"){
+                if(substr($tableName, 0, 8) === "cdr_sip_"){
+                    $dateToAdd = substr($tableName, 8, 4)."-".substr($tableName, 12, 2)."-".substr($tableName, 14, 2);
+                    $dateDiffData = Logic::findDateDifferenceData($dateToAdd, $recentDate);
+                }else{
+                    $dateToAdd = substr($tableName, 9, 4)."-".substr($tableName, 13, 2)."-".substr($tableName, 15, 2);
+                    $dateDiffData = Logic::findDateDifferenceData($dateToAdd, $recentDate);
+                }
+                
+            }else{
+                $dateDiffData = Logic::findDateDifferenceData($currentDate, $recentDate);
+            }
+            
             if ($dateDiffData['diff'] === 0) {
                 Log::logInfo("no controller, but in index file", "no function", "no difference between recent date from column and provided date", "success", "table - $tableName; column - $column");
                 continue;
